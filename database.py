@@ -27,15 +27,15 @@ in_memory_profile = {
     "medical_conditions": "Hypertension, Mild Bradycardia, High Fall Risk",
     "notes": "Uses wearable footwear with sensor insole. Check vitals if tilt > 55 deg.",
     "primary_caregiver": "Anita Kumar (Daughter)",
-    "caregiver_phone": "+919876543210",
+    "caregiver_phone": "+917338416795",
     "caregiver_email": "anita.kumar@gmail.com",
     "emergency_doctor": "Dr. Suresh Mehta, MD (Cardiology)",
-    "doctor_phone": "+919845012345",
+    "doctor_phone": "+918867529190",
     "emergency_service": "Apollo Hospital Emergency",
     "service_phone": "108",
     "sms_enabled": True,
-    "sms_dry_run": True,  # Set to False to send real SMS via SMS Gate API
-    "sms_recipients": "+919876543210, +919845012345"
+    "sms_dry_run": False,  # LIVE SMS enabled by default
+    "sms_recipients": "+917338416795, +918867529190"
 }
 
 # In-memory registered patients list
