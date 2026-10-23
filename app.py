@@ -545,7 +545,9 @@ def send_test_sms():
     data = request.get_json(silent=True) or {}
     dry_run = data.get("dry_run", True)
     recipient = data.get("recipient")
-    recipients = [recipient] if recipient else None
+    recipients = None
+    if recipient:
+        recipients = [r.strip() for r in str(recipient).replace(";", ",").split(",") if r.strip()]
     profile = database.get_patient_profile()
 
     results = sms_service.send_emergency_alert(

@@ -26,16 +26,21 @@ SMSGATE_API_URL    = "https://api.sms-gate.app/3rdparty/v1/messages"
 SMSGATE_SIM_NUMBER = 2  # Active SIM slot
 
 
+import re
+
 def _format_indian_number(phone: str) -> str:
     """Ensures the phone number is in +91XXXXXXXXXX format for India."""
-    phone = phone.strip().replace(" ", "").replace("-", "")
-    if phone.startswith("+"):
-        return phone  # Already formatted
-    if phone.startswith("91") and len(phone) == 12:
-        return "+" + phone
-    if len(phone) == 10:
-        return "+91" + phone
-    return "+" + phone  # Fallback
+    # Strip any characters that are not digits or leading +
+    raw = phone.strip()
+    has_plus = raw.startswith("+")
+    digits_only = re.sub(r"\D", "", raw)
+    if has_plus:
+        return "+" + digits_only
+    if digits_only.startswith("91") and len(digits_only) == 12:
+        return "+" + digits_only
+    if len(digits_only) == 10:
+        return "+91" + digits_only
+    return "+" + digits_only  # Fallback
 
 
 def _send_via_smsgate(phone: str, message: str) -> dict:
@@ -101,10 +106,12 @@ class SMSService:
         # Priority 1: explicitly passed recipients
         # Priority 2: all registered patients' caregiver + family member phones
         # Priority 3: profile sms_recipients field
-        if not recipients:
+        raw_list = []
+        if recipients:
+            raw_list = recipients
+        else:
             # Pull from all registered patients with sms enabled
             registered_phones = database.get_all_caregiver_phones()
-            # Also include family members from all patients
             all_patients = database.get_all_patients()
             for p in all_patients:
                 if p.get("sms_alerts_enabled", True):
@@ -114,13 +121,25 @@ class SMSService:
                             if member.get("sms_enabled") and member.get("phone"):
                                 registered_phones.append(member["phone"].strip())
             if registered_phones:
-                recipients = list(dict.fromkeys(registered_phones))  # deduplicate
+                raw_list = registered_phones
             else:
-                # Fallback to profile sms_recipients
                 raw = profile.get("sms_recipients", "")
-                recipients = [r.strip() for r in raw.replace(";", ",").split(",") if r.strip()]
-                if not recipients and profile.get("caregiver_phone"):
-                    recipients = [profile["caregiver_phone"].strip()]
+                if raw:
+                    raw_list = [r.strip() for r in raw.replace(";", ",").split(",") if r.strip()]
+                elif profile.get("caregiver_phone"):
+                    raw_list = [profile["caregiver_phone"].strip()]
+
+        # Flatten and split any comma/semicolon-separated entries into individual phone numbers
+        recipients = []
+        for item in raw_list:
+            if isinstance(item, str):
+                for sub in item.replace(";", ",").split(","):
+                    clean = sub.strip()
+                    if clean and clean not in recipients:
+                        recipients.append(clean)
+            elif item and str(item).strip() not in recipients:
+                recipients.append(str(item).strip())
+
         if not recipients:
             print("[SMS] No recipient phone numbers configured.")
             return []
