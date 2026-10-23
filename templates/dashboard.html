@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareShield – Multi-Factor Fall Detection & Physiological Anomaly Telemetry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header Section -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-shield">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <h1>CareShield Telemetry & Fall Engine</h1>
+          <p class="subtitle">Multi-Factor Fall Detection &bull; Physiological Illness Anomaly Telemetry &bull; Standalone IoT Hotspot</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (Phase 2 Requirement) -->
+      <nav class="app-nav" aria-label="Dashboard Navigation">
+        <button id="nav-btn-live" class="nav-tab active" onclick="switchTab('live')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
+          <span>Live Telemetry</span>
+        </button>
+        <button id="nav-btn-charts" class="nav-tab" onclick="switchTab('charts')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>Historical Charts</span>
+        </button>
+        <button id="nav-btn-patient" class="nav-tab" onclick="switchTab('patient')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Patient & Contacts</span>
+        </button>
+        <button id="nav-btn-sms" class="nav-tab" onclick="switchTab('sms')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>SMS & Settings</span>
+        </button>
+        <a href="/registration" class="nav-tab" style="text-decoration:none;" title="Register patients &amp; manage family contacts">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <span>Registration</span>
+        </a>
+      </nav>
+
+      <div class="header-status-group">
+        <!-- Theme Toggle (Dark/Light) -->
+        <button id="btn-theme-toggle" class="btn-theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+          <span id="theme-icon">🌙</span>
+        </button>
+
+        <!-- Sensor Packet Watchdog Connection Status (Live vs Offline) -->
+        <div id="sensor-watchdog-pill" class="status-pill status-offline" title="Sensor Packet Watchdog Status">
+          <span class="status-dot"></span>
+          <span id="watchdog-text">Awaiting Telemetry</span>
+        </div>
+
+        <!-- Hardware Monitoring Status Pill (Button 1 State) -->
+        <div id="monitoring-pill" class="status-pill status-active" onclick="triggerToggleMonitoring()" style="cursor: pointer;" title="Click or Press Hardware Button 1 to Toggle">
+          <span class="status-dot"></span>
+          <span id="monitoring-text">Monitoring Active</span>
+        </div>
+
+        <!-- Standalone Hotspot / ESP8266 Link Indicator -->
+        <div class="wifi-indicator" title="ESP8266 Independent Battery & Hotspot Link">
+          <svg class="wifi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <line x1="12" y1="20" x2="12.01" y2="20"/>
+          </svg>
+          <span id="wifi-label">ESP8266 Link: <strong id="wifi-state">Awaiting...</strong></span>
+        </div>
+
+        <!-- Independent Manual Emergency SOS Button -->
+        <button id="btn-manual-sos" class="btn-sos-pulse" onclick="triggerManualSOS()" title="Trigger Independent Manual Emergency SOS">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>EMERGENCY SOS</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Individual Sensor Status Health Bar (Phase 2 Requirement) -->
+    <section class="sensor-health-bar">
+      <div class="health-item" id="sensor-item-max30102">
+        <span class="sensor-name">MAX30102 (HR / SpO₂)</span>
+        <span class="sensor-health-badge badge-health-awaiting" id="sensor-stat-max30102">Awaiting</span>
+      </div>
+      <div class="health-item" id="sensor-item-mpu">
+        <span class="sensor-name">MPU-6050 (6-DOF IMU)</span>
+        <span class="sensor-health-badge badge-health-awaiting" id="sensor-stat-mpu">Awaiting</span>
+      </div>
+      <div class="health-item" id="sensor-item-fsr">
+        <span class="sensor-name">FSR Footwear Insole</span>
+        <span class="sensor-health-badge badge-health-awaiting" id="sensor-stat-fsr">Awaiting</span>
+      </div>
+      <div class="health-item" id="sensor-item-hcsr04">
+        <span class="sensor-name">HC-SR04 Radar</span>
+        <span class="sensor-health-badge badge-health-awaiting" id="sensor-stat-hcsr04">Awaiting</span>
+      </div>
+      <div class="health-item" id="sensor-item-ldr">
+        <span class="sensor-name">LDR Light Sensor</span>
+        <span class="sensor-health-badge badge-health-awaiting" id="sensor-stat-ldr">Awaiting</span>
+      </div>
+    </section>
+
+    <!-- Independent Manual SOS Distress Banner -->
+    <div id="sos-banner" class="alert-banner banner-sos banner-hidden">
+      <div class="alert-content">
+        <div class="alert-icon-wrap" style="background: rgba(239, 68, 68, 0.25); color: #FFF;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="alert-text">
+          <h3 id="sos-title">MANUAL EMERGENCY SOS ACTIVATED</h3>
+          <p id="sos-desc">Patient triggered independent manual distress call. Immediate assistance requested!</p>
+        </div>
+      </div>
+      <div class="banner-actions">
+        <button id="btn-cancel-sos" class="btn-cancel" onclick="triggerCancelSOS()">
+          Cancel Manual SOS
+        </button>
+      </div>
+    </div>
+
+    <!-- Emergency Fall & Controls Banner (Separate Patient Cancel vs Caregiver Ack) -->
+    <div id="alert-banner" class="alert-banner banner-hidden">
+      <div class="alert-content">
+        <div class="alert-icon-wrap" id="alert-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="alert-text">
+          <h3 id="alert-title">Emergency Fall Candidate Detected!</h3>
+          <p id="alert-desc">Multi-factor algorithm detected high-confidence fall or physiological distress.</p>
+          <div id="alert-countdown-wrap" class="alert-countdown-box" style="display: none;">
+            <div class="countdown-label-row">
+              <span>Automatic Software Escalation in:</span>
+              <strong id="alert-countdown-timer" class="font-mono text-rose">10s</strong>
+            </div>
+            <div class="countdown-progress-bar">
+              <div id="alert-countdown-fill" class="countdown-bar-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="alert-actions-group">
+        <button id="btn-cancel-alert" class="btn-cancel" onclick="triggerCancelAlert()" title="Simulate Hardware Button 2 press by patient">
+          Wrong Alert Turned Off (Button 2)
+        </button>
+        <button id="btn-ack-alert" class="btn-ack" onclick="openCaregiverAckModal()" title="Authorized Caregiver Acknowledgment">
+          Caregiver Acknowledge
+        </button>
+      </div>
+    </div>
+
+    <!-- Health Illness Anomaly Warning Banner -->
+    <div id="illness-banner" class="illness-banner banner-hidden">
+      <div class="illness-content">
+        <div class="illness-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div class="illness-text">
+          <h3 id="illness-title">Physiological Illness Anomaly Warning</h3>
+          <p id="illness-desc">Sudden vital sign collapse detected. May cause syncopal fall or indicate acute distress.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 1: LIVE TELEMETRY & FALL ENGINE                                  -->
+    <!-- ==================================================================== -->
+    <div id="tab-content-live" class="tab-pane active">
+      <!-- HERO SECTION: Multi-Factor Fall Detection Engine & Truth Table Matrix -->
+      <section class="card engine-hero-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="card-icon engine-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                <polyline points="2 17 12 22 22 17"/>
+                <polyline points="2 12 12 17 22 12"/>
+              </svg>
+            </div>
+            <div>
+              <h2>Fall Detection Decision Engine & Truth Table</h2>
+              <p class="section-desc">Evaluates Footwear FSR Drop, MPU Orientation Change (Vertical to Horizontal), and Impact/Stillness Evidence.</p>
+            </div>
+          </div>
+          <div class="hero-decision-badge-wrap">
+            <span class="decision-label">Current Decision:</span>
+            <span id="hero-decision-badge" class="badge-decision badge-decision-normal">NORMAL MONITORING</span>
+          </div>
+        </div>
+
+        <!-- Live 3-Factor Signal Evaluation Bar -->
+        <div class="signal-evaluation-grid">
+          <!-- Factor 1: FSR Footwear Pressure Drop -->
+          <div class="signal-card" id="sig-card-fsr">
+            <div class="signal-header">
+              <span class="signal-num">Signal 1</span>
+              <span id="sig-fsr-state" class="signal-pill pill-no">NO DROP</span>
+            </div>
+            <h4 class="signal-title">FSR Footwear Drop</h4>
+            <p class="signal-desc">Drop followed by no recovery (> 1.2s). Rejects ~300ms walking swing.</p>
+            <div class="signal-metric-row">
+              <span class="signal-val" id="sig-fsr-val">0 ADC</span>
+              <span class="signal-subtext" id="sig-fsr-sub">Foot Grounded</span>
+            </div>
+          </div>
+
+          <!-- Factor 2: Orientation Change (Vertical to Horizontal) -->
+          <div class="signal-card" id="sig-card-orient">
+            <div class="signal-header">
+              <span class="signal-num">Signal 2</span>
+              <span id="sig-orient-state" class="signal-pill pill-no">UPRIGHT (0°)</span>
+            </div>
+            <h4 class="signal-title">Orientation Change</h4>
+            <p class="signal-desc">MPU scale vertical (0°-35°) to horizontal (>55° sustained >400ms).</p>
+            <div class="signal-metric-row">
+              <span class="signal-val" id="sig-orient-val">VERTICAL</span>
+              <span class="signal-subtext" id="sig-orient-deg">Tilt: 0.0° from vertical</span>
+            </div>
+          </div>
+
+          <!-- Factor 3: Impact Shock Peak + Stillness Evidence -->
+          <div class="signal-card" id="sig-card-evidence">
+            <div class="signal-header">
+              <span class="signal-num">Signal 3</span>
+              <span id="sig-evidence-state" class="signal-pill pill-no">NO EVIDENCE</span>
+            </div>
+            <h4 class="signal-title">Impact / Inactivity</h4>
+            <p class="signal-desc">Sudden acceleration peak (&ge;2.5g) followed by post-impact stillness (&gt;1.0s).</p>
+            <div class="signal-metric-row">
+              <span class="signal-val" id="sig-accel-val">1.00 g</span>
+              <span class="signal-subtext" id="sig-gyro-val">Gyro: 0.0 deg/s</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Decision Reason Explanation Box -->
+        <div class="decision-rationale-box">
+          <span class="rationale-tag">Algorithm Clinical Verdict:</span>
+          <span id="hero-decision-reason" class="rationale-text">Normal monitoring. Person is upright with stable footing and normal movement dynamics.</span>
+        </div>
+
+        <!-- Truth Table Matrix View -->
+        <div class="truth-table-wrap">
+          <table class="truth-table" id="matrix-truth-table">
+            <thead>
+              <tr>
+                <th style="width: 70px;">Row #</th>
+                <th>FSR Pressure Drop</th>
+                <th>Orientation Change</th>
+                <th>Impact / Inactivity</th>
+                <th>Algorithm Decision</th>
+                <th>Clinical Intent & Context</th>
+                <th style="width: 110px;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Row 1: High-Confidence Fall -->
+              <tr id="table-row-1" class="truth-row">
+                <td><span class="row-badge">Row 1</span></td>
+                <td><strong class="text-rose">Yes</strong> <small class="text-muted">(Foot Lifted)</small></td>
+                <td><strong class="text-rose">Yes</strong> <small class="text-muted">(Horizontal)</small></td>
+                <td><strong class="text-rose">Supporting present</strong> <small class="text-muted">(Shock+Still)</small></td>
+                <td><span class="decision-pill pill-danger">High-confidence fall candidate</span></td>
+                <td>Start immediate alarm escalation & confirmation</td>
+                <td class="row-status-cell"><span class="active-dot"></span><span class="status-lbl">Idle</span></td>
+              </tr>
+
+              <!-- Row 2: Possible Fall (Collecting Evidence) -->
+              <tr id="table-row-2" class="truth-row">
+                <td><span class="row-badge">Row 2</span></td>
+                <td><strong class="text-rose">Yes</strong> <small class="text-muted">(Foot Lifted)</small></td>
+                <td><strong class="text-rose">Yes</strong> <small class="text-muted">(Horizontal)</small></td>
+                <td><strong class="text-amber">No evidence yet</strong></td>
+                <td><span class="decision-pill pill-warning">Possible fall; collect more evidence</span></td>
+                <td>Horizontal without impact shock; collecting telemetry</td>
+                <td class="row-status-cell"><span class="active-dot"></span><span class="status-lbl">Idle</span></td>
+              </tr>
+
+              <!-- Row 3: Pressure Drop Warning (Sitting Down) -->
+              <tr id="table-row-3" class="truth-row">
+                <td><span class="row-badge">Row 3</span></td>
+                <td><strong class="text-rose">Yes</strong> <small class="text-muted">(Foot Lifted)</small></td>
+                <td><strong class="text-cyan">No</strong> <small class="text-muted">(Upright)</small></td>
+                <td><strong class="text-cyan">No</strong></td>
+                <td><span class="decision-pill pill-info">Pressure-drop warning; do not confirm fall</span></td>
+                <td>Person sitting down or removed footwear normally</td>
+                <td class="row-status-cell"><span class="active-dot"></span><span class="status-lbl">Idle</span></td>
+              </tr>
+
+              <!-- Row 4: Possible Fall (Pinned Foot) -->
+              <tr id="table-row-4" class="truth-row">
+                <td><span class="row-badge">Row 4</span></td>
+                <td><strong class="text-cyan">No</strong> <small class="text-muted">(Pressed)</small></td>
+                <td><strong class="text-rose">Yes</strong> <small class="text-muted">(Horizontal)</small></td>
+                <td><strong class="text-rose">Supporting present</strong></td>
+                <td><span class="decision-pill pill-warning">Possible fall; evaluate movement</span></td>
+                <td>Footwear pinned or caught while torso horizontal fallen</td>
+                <td class="row-status-cell"><span class="active-dot"></span><span class="status-lbl">Idle</span></td>
+              </tr>
+
+              <!-- Row 5: Normal Monitoring -->
+              <tr id="table-row-5" class="truth-row row-active">
+                <td><span class="row-badge">Row 5</span></td>
+                <td><strong class="text-cyan">No</strong></td>
+                <td><strong class="text-cyan">No</strong> <small class="text-muted">(Upright)</small></td>
+                <td><strong class="text-cyan">No</strong></td>
+                <td><span class="decision-pill pill-success">Normal monitoring</span></td>
+                <td>Normal standing, walking, and resting posture</td>
+                <td class="row-status-cell"><span class="active-dot"></span><span class="status-lbl">Active Now</span></td>
+              </tr>
+
+              <!-- Row 6: Sensor Invalid -->
+              <tr id="table-row-6" class="truth-row">
+                <td><span class="row-badge">Row 6</span></td>
+                <td><strong class="text-muted">Any</strong></td>
+                <td><strong class="text-muted">Any</strong></td>
+                <td><strong class="text-amber">Sensor invalid</strong></td>
+                <td><span class="decision-pill pill-secondary">Sensor-fault warning</span></td>
+                <td>Hardware fault; do not fabricate readings</td>
+                <td class="row-status-cell"><span class="active-dot"></span><span class="status-lbl">Idle</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Main Grid of 6 Telemetry Cards -->
+      <main class="dashboard-grid">
+        <!-- Card 1: Heart Rate & Illness Anomaly -->
+        <section class="card vitals-card" id="card-heart-rate">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon heart-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+              <h2>Heart Rate</h2>
+            </div>
+            <span id="badge-heart-rate" class="badge badge-simulated">AWAITING</span>
+          </div>
+          <div class="card-metric-wrap">
+            <span id="metric-heart-rate" class="metric-number">N/A</span>
+            <span class="metric-unit">BPM</span>
+          </div>
+          <div class="card-meta">
+            <span class="pulse-indicator"></span>
+            <span id="hr-status-note">Awaiting sensor telemetry...</span>
+          </div>
+          <div class="hr-waveform-bar">
+            <div class="waveform-anim"></div>
+          </div>
+          <div class="illness-subalert-box" id="hr-illness-box" style="display: none;">
+            <span id="hr-illness-text" class="text-rose font-mono">SUDDEN BRADYCARDIA ALERT</span>
+          </div>
+        </section>
+
+        <!-- Card 2: SpO2 Blood Oxygen & Hypoxia Anomaly -->
+        <section class="card vitals-card" id="card-spo2">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon oxygen-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                </svg>
+              </div>
+              <h2>Blood Oxygen (SpO₂)</h2>
+            </div>
+            <span id="badge-spo2" class="badge badge-good">AWAITING</span>
+          </div>
+          <div class="card-metric-wrap">
+            <span id="metric-spo2" class="metric-number">N/A</span>
+            <span class="metric-unit">%</span>
+          </div>
+          <div class="card-meta">
+            <span id="spo2-status-note" class="status-good">Awaiting sensor telemetry...</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div id="spo2-progress-fill" class="progress-bar-fill fill-green" style="width: 0%;"></div>
+          </div>
+          <div class="illness-subalert-box" id="spo2-illness-box" style="display: none;">
+            <span id="spo2-illness-text" class="text-rose font-mono">SUDDEN HYPOXIA ALERT</span>
+          </div>
+        </section>
+
+        <!-- Card 3: MPU-6050 Posture & Orientation Visualizer -->
+        <section class="card sensor-card" id="card-mpu">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon motion-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                  <path d="M2 12h20"/>
+                </svg>
+              </div>
+              <h2>Posture & Motion (MPU-6050)</h2>
+            </div>
+            <span id="badge-orientation" class="badge badge-good">AWAITING</span>
+          </div>
+
+          <!-- Posture Tilt Visualization Gauge -->
+          <div class="posture-visualizer-wrap">
+            <div class="posture-avatar-stage">
+              <div class="posture-avatar" id="posture-avatar">
+                <div class="avatar-head"></div>
+                <div class="avatar-torso"></div>
+                <div class="avatar-limbs"></div>
+              </div>
+            </div>
+            <div class="posture-readout-col">
+              <div class="posture-stat">
+                <span class="stat-label">Tilt from Vertical:</span>
+                <strong id="posture-tilt-deg" class="text-accent">N/A</strong>
+              </div>
+              <div class="posture-stat">
+                <span class="stat-label">Posture Zone:</span>
+                <strong id="posture-zone-text" class="text-muted">Awaiting posture...</strong>
+              </div>
+              <div class="posture-stat">
+                <span class="stat-label">Acceleration:</span>
+                <span id="posture-accel-val">N/A</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-meta">
+            <span id="posture-meta-note">Vertical (0°-35°) &bull; Lean (35°-55°) &bull; Horizontal (>55°)</span>
+          </div>
+        </section>
+
+        <!-- Card 4: FSR Footwear Pressure & Stance -->
+        <section class="card sensor-card" id="card-fsr">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon shoe-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 16c2 0 4-1 6-1s4 1 6 1 4-1 4-1v2H4v-2z"/>
+                  <path d="M4 16V9a3 3 0 0 1 3-3h3l2 4h4a4 4 0 0 1 4 4v2"/>
+                </svg>
+              </div>
+              <h2>Footwear Insole FSR</h2>
+            </div>
+            <span id="badge-fsr" class="badge badge-active">AWAITING</span>
+          </div>
+          <div class="card-metric-wrap">
+            <span id="metric-fsr" class="metric-number">N/A</span>
+            <span class="metric-unit">ADC</span>
+          </div>
+          <div class="card-meta">
+            <span id="fsr-status-note">Awaiting sensor telemetry...</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div id="fsr-progress-fill" class="progress-bar-fill fill-blue" style="width: 0%;"></div>
+          </div>
+        </section>
+
+        <!-- Card 5: Ultrasonic Obstacle Radar -->
+        <section class="card sensor-card" id="card-ultrasonic">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon radar-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+                  <path d="M12 6a6 6 0 1 0 6 6 6 6 0 0 0-6-6zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"/>
+                </svg>
+              </div>
+              <h2>Obstacle Radar (HC-SR04)</h2>
+            </div>
+            <span id="badge-distance" class="badge badge-clear">AWAITING</span>
+          </div>
+          <div class="card-metric-wrap">
+            <span id="metric-distance" class="metric-number">N/A</span>
+            <span class="metric-unit">cm</span>
+          </div>
+          <div class="card-meta">
+            <span id="distance-status-note">Awaiting sensor telemetry...</span>
+          </div>
+          <div class="distance-zone-track">
+            <div class="zone-step zone-urgent" title="<= 15 cm: Urgent Rapid Alarm">Urgent (&le;15cm)</div>
+            <div class="zone-step zone-approach" title="16-45 cm: Caution Warning">Approach (16-45)</div>
+            <div class="zone-step zone-safe" title="46-90 cm: Safe Range">Safe (46-90)</div>
+            <div class="zone-step zone-clear" title="> 90 cm: Path Clear">Clear (>90)</div>
+          </div>
+        </section>
+
+        <!-- Card 6: Ambient Light (LDR) -->
+        <section class="card sensor-card" id="card-ldr">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon sun-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/>
+                  <line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              </div>
+              <h2>Room Illumination (LDR)</h2>
+            </div>
+            <span id="badge-ldr" class="badge badge-good">AWAITING</span>
+          </div>
+          <div class="card-metric-wrap">
+            <span id="metric-ldr" class="metric-number">N/A</span>
+            <span class="metric-unit">lux level</span>
+          </div>
+          <div class="card-meta">
+            <span id="ldr-status-note">Awaiting sensor telemetry...</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div id="ldr-progress-fill" class="progress-bar-fill fill-amber" style="width: 0%;"></div>
+          </div>
+        </section>
+      </main>
+
+      <!-- INTERACTIVE VERIFICATION & ALGORITHM SIMULATION SUITE -->
+      <section class="card simulation-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <div class="card-icon test-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+            </div>
+            <div>
+              <h2>Algorithm Verification & Interactive Test Suite</h2>
+              <p class="section-desc">Instantly test all 6 rows of the Truth Table and physiological illness scenarios directly on the engine.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="test-controls-container">
+          <!-- Truth Table Rows 1-6 Simulation Buttons -->
+          <div class="test-category-group">
+            <h4 class="test-group-title">1. Fall Detection Truth Table Simulation</h4>
+            <div class="test-button-grid">
+              <button class="btn-test btn-test-danger" onclick="simulateRow(1)" title="FSR Drop + Horizontal + Impact/Stillness">
+                <span class="btn-indicator dot-red"></span>
+                <strong>Row 1: High-Confidence Fall</strong>
+                <small>Yes | Yes | Yes</small>
+              </button>
+              <button class="btn-test btn-test-warning" onclick="simulateRow(2)" title="FSR Drop + Horizontal, no impact yet">
+                <span class="btn-indicator dot-amber"></span>
+                <strong>Row 2: Possible Fall (Collect Evidence)</strong>
+                <small>Yes | Yes | No</small>
+              </button>
+              <button class="btn-test btn-test-info" onclick="simulateRow(3)" title="FSR Drop alone without horizontal tilt (Sitting down)">
+                <span class="btn-indicator dot-cyan"></span>
+                <strong>Row 3: Sitting Down Warning</strong>
+                <small>Yes | No | No (No Fall)</small>
+              </button>
+              <button class="btn-test btn-test-warning" onclick="simulateRow(4)" title="Horizontal + Impact with footwear pinned">
+                <span class="btn-indicator dot-amber"></span>
+                <strong>Row 4: Pinned Foot Fall</strong>
+                <small>No | Yes | Yes</small>
+              </button>
+              <button class="btn-test btn-test-success" onclick="simulateRow(5)" title="Normal Standing / Walking Gait">
+                <span class="btn-indicator dot-green"></span>
+                <strong>Row 5: Normal Standing</strong>
+                <small>No | No | No</small>
+              </button>
+              <button class="btn-test btn-test-secondary" onclick="simulateRow(6)" title="Sensor Invalid Fault Warning">
+                <span class="btn-indicator dot-gray"></span>
+                <strong>Row 6: Sensor-Fault Warning</strong>
+                <small>Any | Any | Invalid</small>
+              </button>
+            </div>
+          </div>
+
+          <!-- Illness Anomalies Simulation Buttons -->
+          <div class="test-category-group">
+            <h4 class="test-group-title">2. Illness & Physiological Vitals Anomaly Simulation</h4>
+            <div class="test-button-grid">
+              <button class="btn-test btn-test-rose" onclick="simulateIllness('bradycardia')" title="Heart Rate drops suddenly < 52 BPM">
+                <span class="btn-indicator dot-red"></span>
+                <strong>Sudden Bradycardia</strong>
+                <small>HR &lt; 52 BPM (Syncope Risk)</small>
+              </button>
+              <button class="btn-test btn-test-amber" onclick="simulateIllness('hypoxia')" title="Blood Oxygen drops suddenly < 90%">
+                <span class="btn-indicator dot-amber"></span>
+                <strong>Sudden Hypoxia</strong>
+                <small>SpO2 &lt; 90% (Hypoxemia)</small>
+              </button>
+              <button class="btn-test btn-test-danger" onclick="simulateIllness('syncopal_fall')" title="Cardiac collapse directly preceding high-confidence fall">
+                <span class="btn-indicator dot-purple"></span>
+                <strong>Syncopal Fall Event</strong>
+                <small>Vitals Collapse + Fall</small>
+              </button>
+              <button class="btn-test btn-test-secondary" onclick="triggerCancelAlert()" title="Press Button 2 to cancel false alarm">
+                <span class="btn-indicator dot-green"></span>
+                <strong>Wrong Alert Turned Off</strong>
+                <small>Button 2 (Silence Buzzer)</small>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 2: HISTORICAL CHARTS & TELEMETRY LOG                             -->
+    <!-- ==================================================================== -->
+    <div id="tab-content-charts" class="tab-pane">
+      <!-- 4 Real Time-Series Charts Grid (Phase 2 Requirement) -->
+      <section class="charts-overview-section">
+        <div class="charts-grid">
+          <!-- Chart 1: Heart Rate Time-Series -->
+          <div class="card chart-card">
+            <div class="chart-header">
+              <div class="chart-title-wrap">
+                <span class="chart-bullet dot-red"></span>
+                <h3>Heart Rate (BPM) Trend</h3>
+              </div>
+              <span class="chart-curr-val" id="chart-val-hr">-- BPM</span>
+            </div>
+            <div class="canvas-container">
+              <canvas id="canvas-hr" height="180"></canvas>
+            </div>
+            <div class="chart-footer-meta">
+              <span>Thresholds: Bradycardia &lt;52 BPM | Tachycardia &gt;105 BPM</span>
+            </div>
+          </div>
+
+          <!-- Chart 2: Blood Oxygen SpO2 Time-Series -->
+          <div class="card chart-card">
+            <div class="chart-header">
+              <div class="chart-title-wrap">
+                <span class="chart-bullet dot-cyan"></span>
+                <h3>Blood Oxygen (SpO₂ %) Trend</h3>
+              </div>
+              <span class="chart-curr-val" id="chart-val-spo2">-- %</span>
+            </div>
+            <div class="canvas-container">
+              <canvas id="canvas-spo2" height="180"></canvas>
+            </div>
+            <div class="chart-footer-meta">
+              <span>Thresholds: Critical Hypoxia &lt;90% | Caution &lt;95%</span>
+            </div>
+          </div>
+
+          <!-- Chart 3: Posture Tilt Angle Time-Series -->
+          <div class="card chart-card">
+            <div class="chart-header">
+              <div class="chart-title-wrap">
+                <span class="chart-bullet dot-amber"></span>
+                <h3>Torso Tilt Angle (deg) Trend</h3>
+              </div>
+              <span class="chart-curr-val" id="chart-val-tilt">-- °</span>
+            </div>
+            <div class="canvas-container">
+              <canvas id="canvas-tilt" height="180"></canvas>
+            </div>
+            <div class="chart-footer-meta">
+              <span>Upright &lt;35° | Lean 35°-55° | Fallen Horizontal &ge;55°</span>
+            </div>
+          </div>
+
+          <!-- Chart 4: Footwear Insole FSR Time-Series -->
+          <div class="card chart-card">
+            <div class="chart-header">
+              <div class="chart-title-wrap">
+                <span class="chart-bullet dot-green"></span>
+                <h3>Footwear Insole FSR (ADC) Trend</h3>
+              </div>
+              <span class="chart-curr-val" id="chart-val-fsr">-- ADC</span>
+            </div>
+            <div class="canvas-container">
+              <canvas id="canvas-fsr" height="180"></canvas>
+            </div>
+            <div class="chart-footer-meta">
+              <span>Foot Lifted &lt;200 ADC | Walking 200-700 | Stance &gt;700</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Historical Database Records & False Alert Audit Log Table -->
+      <section class="card history-section">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Historical Telemetry & Alert Audit Database</h2>
+            <span class="badge badge-db" id="db-badge">Database Verified</span>
+          </div>
+          <div class="info-row">
+            <button class="btn-refresh-sm" onclick="fetchHistory()" title="Manual refresh">↻ Refresh</button>
+            <span>Last Sync: <strong id="metric-last-sync" class="font-mono text-accent">--:--:--</strong></span>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Algorithm Verdict / Event</th>
+                <th>Posture / Tilt</th>
+                <th>Insole FSR</th>
+                <th>Heart Rate</th>
+                <th>SpO₂</th>
+                <th>Status / Caregiver Notes</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <tr>
+                <td colspan="7" class="text-center text-muted">Awaiting telemetry records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 3: PATIENT & EMERGENCY CONTACTS (Phase 3 Requirement)             -->
+    <!-- ==================================================================== -->
+    <div id="tab-content-patient" class="tab-pane">
+      <div class="settings-grid">
+        <!-- Patient Clinical Profile Card -->
+        <section class="card form-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon profile-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div>
+                <h2>Patient Clinical Profile</h2>
+                <p class="section-desc">Monitored individual personal and baseline health profile details.</p>
+              </div>
+            </div>
+          </div>
+
+          <form id="patient-profile-form" onsubmit="savePatientProfile(event)">
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="prof-patient-name">Patient Full Name</label>
+                <input type="text" id="prof-patient-name" name="patient_name" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label for="prof-age">Age</label>
+                <input type="number" id="prof-age" name="age" class="form-input" min="1" max="120" required>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="prof-blood-type">Blood Group</label>
+                <input type="text" id="prof-blood-type" name="blood_type" class="form-input" placeholder="e.g. O+">
+              </div>
+              <div class="form-group">
+                <label for="prof-room">Room / Residence Location</label>
+                <input type="text" id="prof-room" name="room_number" class="form-input" placeholder="e.g. Room 304 - North Wing">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="prof-conditions">Pre-existing Medical Conditions & Fall Risk Factors</label>
+              <textarea id="prof-conditions" name="medical_conditions" class="form-textarea" rows="2" placeholder="e.g. Hypertension, History of syncope, Post-operative knee weakness"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="prof-notes">Caregiver Clinical Guidance & Wearable Notes</label>
+              <textarea id="prof-notes" name="notes" class="form-textarea" rows="2" placeholder="e.g. Wears insole sensor on right shoe. Contact daughter immediately if unweighted > 2 hours."></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" id="btn-save-profile">Save Patient Profile</button>
+              <span id="profile-save-status" class="status-msg"></span>
+            </div>
+          </form>
+        </section>
+
+        <!-- Caregiver & Emergency Contacts Card -->
+        <section class="card form-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon phone-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </div>
+              <div>
+                <h2>Caregiver & Emergency Contacts</h2>
+                <p class="section-desc">Designated family contacts, on-call doctor, and local emergency medical services.</p>
+              </div>
+            </div>
+          </div>
+
+          <form id="contacts-form" onsubmit="savePatientProfile(event)">
+            <div class="form-group">
+              <label for="prof-caregiver">Primary Caregiver Name & Relationship</label>
+              <input type="text" id="prof-caregiver" name="primary_caregiver" class="form-input" placeholder="e.g. Sarah Vance (Daughter)">
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="prof-caregiver-phone">Caregiver Phone</label>
+                <input type="tel" id="prof-caregiver-phone" name="caregiver_phone" class="form-input" placeholder="+1-555-019-2834">
+              </div>
+              <div class="form-group">
+                <label for="prof-caregiver-email">Caregiver Email</label>
+                <input type="email" id="prof-caregiver-email" name="caregiver_email" class="form-input" placeholder="sarah.vance@caregiver.org">
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="prof-doctor">Emergency Physician / Doctor</label>
+                <input type="text" id="prof-doctor" name="emergency_doctor" class="form-input" placeholder="Dr. Robert Chen, MD">
+              </div>
+              <div class="form-group">
+                <label for="prof-doctor-phone">Doctor Emergency Phone</label>
+                <input type="tel" id="prof-doctor-phone" name="doctor_phone" class="form-input" placeholder="+1-555-014-9988">
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="prof-emergency-service">Local Emergency Service</label>
+                <input type="text" id="prof-emergency-service" name="emergency_service" class="form-input" placeholder="City General Hospital Paramedics">
+              </div>
+              <div class="form-group">
+                <label for="prof-service-phone">Service Hotline</label>
+                <input type="tel" id="prof-service-phone" name="service_phone" class="form-input" placeholder="911">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" id="btn-save-contacts">Save Emergency Contacts</button>
+              <span id="contacts-save-status" class="status-msg"></span>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 4: SMS NOTIFICATIONS & SYSTEM CONFIG (Phase 3 Requirement)        -->
+    <!-- ==================================================================== -->
+    <div id="tab-content-sms" class="tab-pane">
+      <div class="settings-grid">
+        <!-- SMS Service Configuration Card -->
+        <section class="card form-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon sms-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div>
+                <h2>SMS Notification Engine Settings</h2>
+                <p class="section-desc">Automated cellular dispatch on high-confidence fall or emergency SOS distress.</p>
+              </div>
+            </div>
+            <span class="badge badge-good" id="badge-sms-mode">DRY-RUN SAFE</span>
+          </div>
+
+          <div class="dry-run-alert-banner">
+            <div class="dry-run-icon">🛡️</div>
+            <div>
+              <strong>Dry-Run Mode Enabled by Default</strong>
+              <p>Safety Protocol: Live cellular SMS transmission is never initiated during tests without explicit authorization. Messages are validated, throttled, and recorded into the audit log.</p>
+            </div>
+          </div>
+
+          <form id="sms-config-form" onsubmit="saveSMSConfig(event)">
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="cfg-sms-enabled" name="sms_enabled" checked>
+                  <span>Enable Emergency SMS Alerts</span>
+                </label>
+              </div>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="cfg-sms-dry-run" name="sms_dry_run" checked>
+                  <span>Dry-Run / Safe Mock Mode (Enabled by Default)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-recipients">Authorized Recipient Mobile Numbers (Comma-separated)</label>
+              <input type="text" id="cfg-recipients" name="sms_recipients" class="form-input" placeholder="+1-555-019-2834, +1-555-014-9988">
+              <small class="text-muted">Separate multiple international-format phone numbers with commas.</small>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" id="btn-save-sms-cfg">Save SMS Settings</button>
+              <button type="button" class="btn-secondary" onclick="triggerTestSMS(true)">Send Test Alert (Dry-Run)</button>
+              <span id="sms-cfg-status" class="status-msg"></span>
+            </div>
+          </form>
+
+          <div class="cooldown-info-box">
+            <strong>Duplicate Burst Protection:</strong> 60-second cooldown per recipient suppresses repeated SMS flooding if alerts trigger concurrently.
+          </div>
+        </section>
+
+        <!-- SMS Dispatch & Delivery Verification Log Card -->
+        <section class="card form-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon audit-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <div>
+                <h2>SMS Dispatch & Delivery Audit Log</h2>
+                <p class="section-desc">Accurate status tracking: <code>QUEUED</code> &rarr; <code>SENT_TO_GATEWAY</code> &rarr; <code>DELIVERED</code>.</p>
+              </div>
+            </div>
+            <button class="btn-refresh-sm" onclick="fetchSMSLogs()">↻ Refresh</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Recipient</th>
+                  <th>Status</th>
+                  <th>Dry-Run</th>
+                  <th>Provider Gateway Response</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="sms-log-table-body">
+                <tr>
+                  <td colspan="6" class="text-center text-muted">Awaiting SMS dispatch records...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Caregiver Alert Acknowledgement Modal (Phase 2 Requirement) -->
+    <div id="caregiver-modal" class="modal-backdrop modal-hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+            </div>
+            <h3>Caregiver Alert Acknowledgement</h3>
+          </div>
+          <button class="modal-close" onclick="closeCaregiverAckModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-instruction">Acknowledge this fall or distress alert to log your response in the permanent audit record and silence the physical hardware buzzer.</p>
+          <div class="form-group">
+            <label for="ack-caregiver-name">Caregiver Name / Staff ID</label>
+            <input type="text" id="ack-caregiver-name" class="form-input" value="Nurse Sarah Vance" required>
+          </div>
+          <div class="form-group">
+            <label for="ack-notes">Intervention & Patient Status Notes</label>
+            <textarea id="ack-notes" class="form-textarea" rows="3">Patient evaluated in room. Consciousness confirmed, vitals stable, no injury detected.</textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeCaregiverAckModal()">Cancel</button>
+          <button type="button" class="btn-ack" onclick="submitCaregiverAck()">Confirm & Silence Buzzer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>CareShield Elderly Health Telemetry &bull; Multi-Factor Fall Detection &bull; Arduino Uno &bull; ESP-12E Standalone Hotspot &bull; MPU-6050 &bull; MAX30102 &bull; Footwear FSR</p>
+    </footer>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

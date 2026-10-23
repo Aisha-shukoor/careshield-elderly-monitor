@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareShield – Patient Registration Dashboard</title>
+  <meta name="description" content="Register patients with caregiver and family member contacts for CareShield elderly fall detection system.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    /* ============================================================
+       REGISTRATION PAGE SPECIFIC STYLES
+    ============================================================ */
+    :root {
+      --reg-accent: #7c3aed;
+      --reg-accent-light: #a78bfa;
+      --reg-success: #10b981;
+      --reg-danger: #ef4444;
+      --reg-warn: #f59e0b;
+    }
+
+    .reg-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2rem;
+      background: var(--glass-bg);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .reg-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+    }
+
+    .reg-logo {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--reg-accent), var(--reg-accent-light));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .reg-logo svg { width: 22px; height: 22px; }
+
+    .reg-brand h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--reg-accent-light), #c4b5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .reg-brand p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-back:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+      border-color: var(--reg-accent);
+    }
+
+    .reg-main {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 73px);
+    }
+
+    /* ---- LEFT PANEL: Patient List ---- */
+    .patient-list-panel {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .panel-count {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: var(--surface-hover);
+      padding: 0.2rem 0.6rem;
+      border-radius: 99px;
+    }
+
+    .patient-search {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      transition: border-color 0.2s;
+    }
+
+    .search-input-wrap:focus-within {
+      border-color: var(--reg-accent);
+    }
+
+    .search-input-wrap svg {
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .search-input-wrap input {
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      width: 100%;
+    }
+
+    .search-input-wrap input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .patient-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .patient-list::-webkit-scrollbar { width: 4px; }
+    .patient-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .patient-card {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .patient-card:hover { background: var(--surface-hover); }
+    .patient-card.selected { background: rgba(124, 58, 237, 0.1); border-left: 3px solid var(--reg-accent); }
+
+    .patient-card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .patient-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--reg-accent), var(--reg-accent-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .patient-card-info { flex: 1; min-width: 0; }
+    .patient-card-name {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .patient-card-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .patient-card-badges {
+      display: flex;
+      gap: 0.35rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .mini-badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-sms-on { background: rgba(16, 185, 129, 0.15); color: var(--reg-success); }
+    .badge-sms-off { background: rgba(239, 68, 68, 0.15); color: var(--reg-danger); }
+    .badge-blood { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+    .badge-family { background: rgba(124, 58, 237, 0.12); color: var(--reg-accent-light); }
+
+    .patient-card-delete {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0.25rem;
+      border-radius: 4px;
+      opacity: 0;
+      transition: all 0.15s;
+    }
+
+    .patient-card:hover .patient-card-delete { opacity: 1; }
+    .patient-card-delete:hover { background: rgba(239, 68, 68, 0.15); color: var(--reg-danger); }
+
+    .add-patient-btn {
+      margin: 1rem 1.5rem;
+      padding: 0.75rem 1.25rem;
+      background: linear-gradient(135deg, var(--reg-accent), #6d28d9);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+
+    .add-patient-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+    }
+
+    .empty-list {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .empty-list svg { margin-bottom: 1rem; opacity: 0.4; }
+
+    /* ---- RIGHT PANEL: Detail Form ---- */
+    .detail-panel {
+      background: var(--bg);
+      overflow-y: auto;
+    }
+
+    .detail-panel::-webkit-scrollbar { width: 4px; }
+    .detail-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .welcome-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    .welcome-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(167, 139, 250, 0.1));
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .welcome-icon svg { width: 36px; height: 36px; color: var(--reg-accent-light); }
+
+    .welcome-screen h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .welcome-screen p {
+      color: var(--text-muted);
+      max-width: 400px;
+      line-height: 1.6;
+      font-size: 0.9375rem;
+    }
+
+    /* ---- Patient Detail Form ---- */
+    .patient-form-container {
+      padding: 2rem;
+      max-width: 780px;
+    }
+
+    .form-section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      margin-top: 2rem;
+    }
+
+    .form-section-header:first-child { margin-top: 0; }
+
+    .section-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-icon.purple { background: rgba(124, 58, 237, 0.15); color: var(--reg-accent-light); }
+    .section-icon.green { background: rgba(16, 185, 129, 0.15); color: var(--reg-success); }
+    .section-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .section-icon.orange { background: rgba(245, 158, 11, 0.15); color: var(--reg-warn); }
+
+    .section-icon svg { width: 16px; height: 16px; }
+
+    .form-section-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .form-section-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .form-grid.cols-1 { grid-template-columns: 1fr; }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-field.span-2 { grid-column: span 2; }
+
+    .form-field label {
+      font-size: 0.78125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-field label .required { color: var(--reg-danger); }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      font-family: inherit;
+      padding: 0.6rem 0.875rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+      border-color: var(--reg-accent);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+    }
+
+    .form-field textarea { min-height: 80px; resize: vertical; }
+
+    .form-field select { cursor: pointer; }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.875rem 1rem;
+      margin: 0.75rem 0;
+    }
+
+    .toggle-label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .toggle-label strong { font-size: 0.875rem; color: var(--text-primary); }
+    .toggle-label small { font-size: 0.75rem; color: var(--text-muted); }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-knob {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toggle-knob:before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-knob { background: var(--reg-accent); }
+    .toggle-switch input:checked + .toggle-knob:before { transform: translateX(20px); }
+
+    .form-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.75rem 0;
+    }
+
+    /* Family Members Section */
+    .family-member-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .family-member-item {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.875rem 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .family-member-item:hover { border-color: rgba(124, 58, 237, 0.3); }
+
+    .family-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #059669, #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .family-info { flex: 1; min-width: 0; }
+    .family-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+    .family-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+    .family-sms-badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .family-sms-badge.on { background: rgba(16, 185, 129, 0.15); color: var(--reg-success); }
+    .family-sms-badge.off { background: rgba(100, 100, 120, 0.15); color: var(--text-muted); }
+
+    .family-delete-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .family-delete-btn:hover { background: rgba(239, 68, 68, 0.12); color: var(--reg-danger); }
+
+    .add-family-form {
+      background: rgba(124, 58, 237, 0.05);
+      border: 1px dashed rgba(124, 58, 237, 0.25);
+      border-radius: 10px;
+      padding: 1.25rem;
+      display: none;
+    }
+
+    .add-family-form.visible { display: block; }
+
+    .btn-add-family {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1rem;
+      background: none;
+      border: 1px dashed rgba(124, 58, 237, 0.4);
+      border-radius: 8px;
+      color: var(--reg-accent-light);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-add-family:hover { background: rgba(124, 58, 237, 0.08); border-style: solid; }
+
+    /* Form Actions */
+    .form-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+
+    .btn-save {
+      padding: 0.7rem 1.75rem;
+      background: linear-gradient(135deg, var(--reg-accent), #6d28d9);
+      border: none;
+      border-radius: 9px;
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+
+    .btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4); }
+    .btn-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .btn-cancel-form {
+      padding: 0.7rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel-form:hover { background: var(--surface-hover); border-color: var(--text-muted); }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: 0.875rem 1.5rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+      max-width: 350px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; }
+    .toast.error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+    }
+
+    .stat-item {
+      background: var(--surface);
+      padding: 0.75rem 1rem;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: var(--reg-accent-light);
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Mode indicator */
+    .mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+    }
+
+    .mode-badge.new-mode { background: rgba(16, 185, 129, 0.15); color: var(--reg-success); }
+    .mode-badge.edit-mode { background: rgba(245, 158, 11, 0.15); color: var(--reg-warn); }
+
+    @media (max-width: 900px) {
+      .reg-main { grid-template-columns: 1fr; }
+      .patient-list-panel { border-right: none; border-bottom: 1px solid var(--border); max-height: 300px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+      .form-field.span-2 { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="reg-header">
+    <div class="reg-brand">
+      <div class="reg-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Patient Registration Dashboard</h1>
+        <p>CareShield – Register patients, caregivers & family contacts</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="btn-theme-toggle" class="btn-theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+        <span id="theme-icon">🌙</span>
+      </button>
+      <a href="/" class="btn-back">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Dashboard
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="reg-main">
+
+    <!-- LEFT: Patient List Panel -->
+    <aside class="patient-list-panel">
+      <div class="panel-header">
+        <span class="panel-title">Registered Patients</span>
+        <span class="panel-count" id="patient-count">0</span>
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-label">Patients</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-sms">0</div>
+          <div class="stat-label">SMS Active</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-contacts">0</div>
+          <div class="stat-label">Contacts</div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="patient-search">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="patient-search" placeholder="Search patients..." oninput="filterPatients()">
+        </div>
+      </div>
+
+      <!-- Patient List -->
+      <div class="patient-list" id="patient-list">
+        <div class="empty-list" id="empty-list">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+          </svg>
+          <p style="margin-top: 0.5rem; font-size: 0.875rem;">No patients registered yet</p>
+        </div>
+      </div>
+
+      <!-- Add Button -->
+      <button class="add-patient-btn" onclick="startNewPatient()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Register New Patient
+      </button>
+    </aside>
+
+    <!-- RIGHT: Detail / Form Panel -->
+    <div class="detail-panel" id="detail-panel">
+      <!-- Welcome Screen (default) -->
+      <div class="welcome-screen" id="welcome-screen">
+        <div class="welcome-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <h2>Patient Registration</h2>
+        <p>Select a patient from the list to view or edit their details, or click <strong>Register New Patient</strong> to add a new patient with caregiver and family member contacts.</p>
+      </div>
+
+      <!-- Patient Form (hidden until selected/new) -->
+      <div class="patient-form-container" id="patient-form-container" style="display:none;">
+
+        <!-- Form Title Row -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem;">
+          <div>
+            <h2 id="form-title" style="font-size:1.25rem; font-weight:700; color:var(--text-primary);">Register Patient</h2>
+            <p id="form-subtitle" style="font-size:0.8125rem; color:var(--text-muted); margin-top:0.2rem;">Fill in all required fields</p>
+          </div>
+          <span class="mode-badge new-mode" id="mode-badge">New Patient</span>
+        </div>
+
+        <!-- SECTION 1: Patient Info -->
+        <div class="form-section-header">
+          <div class="section-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <div class="form-section-title">Patient Information</div>
+            <div class="form-section-subtitle">Basic details about the elderly patient</div>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Full Name <span class="required">*</span></label>
+            <input type="text" id="f-patient-name" placeholder="e.g. Ravi Kumar" required>
+          </div>
+          <div class="form-field">
+            <label>Age</label>
+            <input type="number" id="f-age" placeholder="72" min="1" max="120">
+          </div>
+        </div>
+
+        <div class="form-grid cols-3">
+          <div class="form-field">
+            <label>Gender</label>
+            <select id="f-gender">
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Blood Type</label>
+            <select id="f-blood-type">
+              <option value="">Select</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Room / Bed</label>
+            <input type="text" id="f-room-number" placeholder="e.g. Ward 3 - Bed 12">
+          </div>
+        </div>
+
+        <div class="form-grid cols-1">
+          <div class="form-field">
+            <label>Home Address</label>
+            <input type="text" id="f-address" placeholder="Full home address">
+          </div>
+        </div>
+
+        <div class="form-grid cols-1">
+          <div class="form-field">
+            <label>Medical Conditions</label>
+            <textarea id="f-medical-conditions" placeholder="e.g. Hypertension, Mild Bradycardia, High Fall Risk"></textarea>
+          </div>
+        </div>
+
+        <div class="form-grid cols-1">
+          <div class="form-field">
+            <label>Additional Notes</label>
+            <textarea id="f-notes" placeholder="Care instructions, triggers, etc."></textarea>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Device ID</label>
+            <input type="text" id="f-device-id" placeholder="ELDERLY_BAND_01">
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- SECTION 2: Caregiver -->
+        <div class="form-section-header">
+          <div class="section-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.7 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.59 1.17h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16Z"/></svg>
+          </div>
+          <div>
+            <div class="form-section-title">Primary Caregiver</div>
+            <div class="form-section-subtitle">Main contact — will receive SMS alerts when a fall is detected</div>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Caregiver Name <span class="required">*</span></label>
+            <input type="text" id="f-caregiver-name" placeholder="e.g. Anita Kumar">
+          </div>
+          <div class="form-field">
+            <label>Relation to Patient</label>
+            <select id="f-caregiver-relation">
+              <option value="">Select relation</option>
+              <option value="Daughter">Daughter</option>
+              <option value="Son">Son</option>
+              <option value="Spouse">Spouse</option>
+              <option value="Sibling">Sibling</option>
+              <option value="Friend">Friend</option>
+              <option value="Nurse">Nurse</option>
+              <option value="Professional Caregiver">Professional Caregiver</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Mobile Number (Indian) <span class="required">*</span></label>
+            <input type="tel" id="f-caregiver-phone" placeholder="10-digit: 9876543210" maxlength="15"
+                   oninput="formatPhone(this)">
+          </div>
+          <div class="form-field">
+            <label>Email Address</label>
+            <input type="email" id="f-caregiver-email" placeholder="caregiver@email.com">
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- SECTION 3: Doctor & Emergency -->
+        <div class="form-section-header">
+          <div class="section-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div>
+            <div class="form-section-title">Doctor & Emergency Services</div>
+            <div class="form-section-subtitle">Medical team and emergency contact numbers</div>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Doctor's Name</label>
+            <input type="text" id="f-doctor-name" placeholder="e.g. Dr. Suresh Mehta (Cardiology)">
+          </div>
+          <div class="form-field">
+            <label>Doctor's Mobile</label>
+            <input type="tel" id="f-doctor-phone" placeholder="10-digit number" oninput="formatPhone(this)">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Emergency Service</label>
+            <input type="text" id="f-emergency-service" placeholder="e.g. Apollo Hospital Emergency">
+          </div>
+          <div class="form-field">
+            <label>Emergency Number</label>
+            <input type="tel" id="f-emergency-service-phone" placeholder="e.g. 108">
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- SECTION 4: Family Members -->
+        <div class="form-section-header">
+          <div class="section-icon orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div>
+            <div class="form-section-title">Family Members</div>
+            <div class="form-section-subtitle">Additional contacts who will also receive SMS alerts</div>
+          </div>
+        </div>
+
+        <!-- Existing family members list -->
+        <div class="family-member-list" id="family-member-list"></div>
+
+        <!-- Inline Add Family Member Form -->
+        <div class="add-family-form" id="add-family-form">
+          <div style="font-size:0.8125rem; font-weight:600; color:var(--reg-accent-light); margin-bottom:0.875rem;">Add Family Member</div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Name <span class="required">*</span></label>
+              <input type="text" id="fm-name" placeholder="e.g. Priya Kumar">
+            </div>
+            <div class="form-field">
+              <label>Relation</label>
+              <select id="fm-relation">
+                <option value="">Select</option>
+                <option value="Son">Son</option>
+                <option value="Daughter">Daughter</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Sibling">Sibling</option>
+                <option value="Grandchild">Grandchild</option>
+                <option value="Nephew/Niece">Nephew/Niece</option>
+                <option value="Friend">Friend</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Mobile Number <span class="required">*</span></label>
+              <input type="tel" id="fm-phone" placeholder="10-digit: 9845012345" oninput="formatPhone(this)">
+            </div>
+            <div class="form-field">
+              <label>Email (optional)</label>
+              <input type="email" id="fm-email" placeholder="family@email.com">
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-top:0.75rem;">
+            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8125rem; color:var(--text-secondary);">
+              <input type="checkbox" id="fm-sms-enabled" checked style="accent-color:var(--reg-accent); width:14px; height:14px;">
+              Enable SMS alerts for this member
+            </label>
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+            <button onclick="saveFamilyMember()" style="padding:0.5rem 1.25rem; background:linear-gradient(135deg, var(--reg-accent), #6d28d9); border:none; border-radius:7px; color:white; font-size:0.8125rem; font-weight:600; cursor:pointer;">
+              Save Member
+            </button>
+            <button onclick="cancelAddFamily()" style="padding:0.5rem 0.875rem; background:var(--surface); border:1px solid var(--border); border-radius:7px; color:var(--text-secondary); font-size:0.8125rem; cursor:pointer;">
+              Cancel
+            </button>
+          </div>
+        </div>
+
+        <button class="btn-add-family" id="btn-show-add-family" onclick="showAddFamilyForm()" style="display:none;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Family Member
+        </button>
+
+        <hr class="form-divider">
+
+        <!-- SECTION 5: SMS Alerts -->
+        <div class="form-section-header" style="margin-top:0;">
+          <div class="section-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div>
+            <div class="form-section-title">SMS Alert Settings</div>
+            <div class="form-section-subtitle">Control whether SMS is sent on fall detection</div>
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-label">
+            <strong>Enable Fall SMS Alerts</strong>
+            <small>Send SMS to caregiver & family when a fall is confirmed (after 10s countdown)</small>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="f-sms-alerts-enabled" checked>
+            <span class="toggle-knob"></span>
+          </label>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button class="btn-save" id="btn-save-patient" onclick="savePatient()">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Patient
+          </button>
+          <button class="btn-cancel-form" onclick="cancelForm()">Cancel</button>
+          <div id="form-status" style="font-size:0.8125rem; color:var(--text-muted); margin-left:auto;"></div>
+        </div>
+
+      </div><!-- end patient-form-container -->
+    </div><!-- end detail-panel -->
+  </main>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <svg id="toast-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="toast-msg">Action completed</span>
+  </div>
+
+  <script>
+    // ============================================================
+    // STATE
+    // ============================================================
+    let allPatients = [];
+    let currentPatientId = null;
+    let isNewPatient = false;
+    let familyMembersLocal = []; // temp list for new patient
+
+    // ============================================================
+    // THEME (reuse existing logic)
+    // ============================================================
+    function toggleTheme() {
+      const body = document.body;
+      const isDark = body.getAttribute('data-theme') !== 'light';
+      body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+      localStorage.setItem('careshield-theme', isDark ? 'light' : 'dark');
+    }
+
+    (function initTheme() {
+      const saved = localStorage.getItem('careshield-theme') || 'dark';
+      document.body.setAttribute('data-theme', saved);
+      const icon = document.getElementById('theme-icon');
+      if (icon) icon.textContent = saved === 'dark' ? '🌙' : '☀️';
+    })();
+
+    // ============================================================
+    // TOAST
+    // ============================================================
+    let toastTimer = null;
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toast-icon');
+      document.getElementById('toast-msg').textContent = msg;
+      toast.className = `toast ${type} show`;
+      if (type === 'success') {
+        icon.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+      } else {
+        icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
+      }
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3500);
+    }
+
+    // ============================================================
+    // LOAD PATIENTS
+    // ============================================================
+    async function loadPatients() {
+      try {
+        const res = await fetch('/api/patients');
+        allPatients = await res.json();
+        renderPatientList(allPatients);
+        updateStats();
+      } catch (e) {
+        showToast('Failed to load patients', 'error');
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('stat-total').textContent = allPatients.length;
+      document.getElementById('patient-count').textContent = allPatients.length;
+      const smsActive = allPatients.filter(p => p.sms_alerts_enabled).length;
+      document.getElementById('stat-sms').textContent = smsActive;
+      // Count total contacts will be updated when family members are loaded
+    }
+
+    function renderPatientList(patients) {
+      const list = document.getElementById('patient-list');
+      const empty = document.getElementById('empty-list');
+
+      // Clear existing patient cards (keep empty div)
+      list.innerHTML = '';
+      list.appendChild(empty);
+
+      if (!patients.length) {
+        empty.style.display = 'flex';
+        return;
+      }
+      empty.style.display = 'none';
+
+      patients.forEach(p => {
+        const initials = (p.patient_name || 'P').substring(0, 2).toUpperCase();
+        const card = document.createElement('div');
+        card.className = 'patient-card' + (p.id === currentPatientId ? ' selected' : '');
+        card.dataset.id = p.id;
+        card.onclick = () => selectPatient(p.id);
+
+        card.innerHTML = `
+          <button class="patient-card-delete" onclick="event.stopPropagation(); deletePatient(${p.id})" title="Delete patient">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+          </button>
+          <div class="patient-card-top">
+            <div class="patient-avatar">${initials}</div>
+            <div class="patient-card-info">
+              <div class="patient-card-name">${p.patient_name || '—'}</div>
+              <div class="patient-card-meta">
+                ${p.age ? p.age + ' yrs' : ''}${p.age && p.room_number ? ' · ' : ''}${p.room_number || ''}
+              </div>
+            </div>
+          </div>
+          <div class="patient-card-badges">
+            ${p.blood_type ? `<span class="mini-badge badge-blood">${p.blood_type}</span>` : ''}
+            <span class="mini-badge ${p.sms_alerts_enabled ? 'badge-sms-on' : 'badge-sms-off'}">${p.sms_alerts_enabled ? 'SMS ON' : 'SMS OFF'}</span>
+            ${p.caregiver_name ? `<span class="mini-badge badge-family" style="max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.caregiver_name}</span>` : ''}
+          </div>`;
+        list.appendChild(card);
+      });
+    }
+
+    function filterPatients() {
+      const q = document.getElementById('patient-search').value.toLowerCase();
+      const filtered = allPatients.filter(p =>
+        (p.patient_name || '').toLowerCase().includes(q) ||
+        (p.caregiver_name || '').toLowerCase().includes(q) ||
+        (p.caregiver_phone || '').includes(q)
+      );
+      renderPatientList(filtered);
+    }
+
+    // ============================================================
+    // SELECT PATIENT
+    // ============================================================
+    async function selectPatient(id) {
+      currentPatientId = id;
+      isNewPatient = false;
+      familyMembersLocal = [];
+
+      // Highlight selected
+      document.querySelectorAll('.patient-card').forEach(c => {
+        c.classList.toggle('selected', parseInt(c.dataset.id) === id);
+      });
+
+      try {
+        const res = await fetch(`/api/patients/${id}`);
+        const data = await res.json();
+        populateForm(data);
+        familyMembersLocal = data.family_members || [];
+        renderFamilyMembers();
+        showForm('edit');
+      } catch (e) {
+        showToast('Failed to load patient details', 'error');
+      }
+    }
+
+    function populateForm(data) {
+      document.getElementById('f-patient-name').value = data.patient_name || '';
+      document.getElementById('f-age').value = data.age || '';
+      document.getElementById('f-gender').value = data.gender || '';
+      document.getElementById('f-blood-type').value = data.blood_type || '';
+      document.getElementById('f-room-number').value = data.room_number || '';
+      document.getElementById('f-address').value = data.address || '';
+      document.getElementById('f-medical-conditions').value = data.medical_conditions || '';
+      document.getElementById('f-notes').value = data.notes || '';
+      document.getElementById('f-device-id').value = data.device_id || 'ELDERLY_BAND_01';
+      document.getElementById('f-caregiver-name').value = data.caregiver_name || '';
+      document.getElementById('f-caregiver-relation').value = data.caregiver_relation || '';
+      document.getElementById('f-caregiver-phone').value = data.caregiver_phone || '';
+      document.getElementById('f-caregiver-email').value = data.caregiver_email || '';
+      document.getElementById('f-doctor-name').value = data.doctor_name || '';
+      document.getElementById('f-doctor-phone').value = data.doctor_phone || '';
+      document.getElementById('f-emergency-service').value = data.emergency_service || '';
+      document.getElementById('f-emergency-service-phone').value = data.emergency_service_phone || '';
+      document.getElementById('f-sms-alerts-enabled').checked = Boolean(data.sms_alerts_enabled !== false);
+    }
+
+    function clearForm() {
+      ['f-patient-name','f-age','f-gender','f-blood-type','f-room-number','f-address',
+       'f-medical-conditions','f-notes','f-device-id','f-caregiver-name','f-caregiver-relation',
+       'f-caregiver-phone','f-caregiver-email','f-doctor-name','f-doctor-phone',
+       'f-emergency-service','f-emergency-service-phone'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      document.getElementById('f-device-id').value = 'ELDERLY_BAND_01';
+      document.getElementById('f-emergency-service').value = 'Apollo Hospital Emergency';
+      document.getElementById('f-emergency-service-phone').value = '108';
+      document.getElementById('f-sms-alerts-enabled').checked = true;
+    }
+
+    // ============================================================
+    // NEW PATIENT
+    // ============================================================
+    function startNewPatient() {
+      currentPatientId = null;
+      isNewPatient = true;
+      familyMembersLocal = [];
+      clearForm();
+      renderFamilyMembers();
+      document.querySelectorAll('.patient-card').forEach(c => c.classList.remove('selected'));
+      showForm('new');
+    }
+
+    function showForm(mode) {
+      document.getElementById('welcome-screen').style.display = 'none';
+      document.getElementById('patient-form-container').style.display = 'block';
+      document.getElementById('btn-show-add-family').style.display = currentPatientId || isNewPatient ? 'inline-flex' : 'none';
+
+      const badge = document.getElementById('mode-badge');
+      const title = document.getElementById('form-title');
+      const subtitle = document.getElementById('form-subtitle');
+
+      if (mode === 'new') {
+        badge.textContent = '+ New Patient';
+        badge.className = 'mode-badge new-mode';
+        title.textContent = 'Register New Patient';
+        subtitle.textContent = 'Fill in the details to register a new patient in the system';
+      } else {
+        badge.textContent = 'Editing';
+        badge.className = 'mode-badge edit-mode';
+        const p = allPatients.find(x => x.id === currentPatientId);
+        title.textContent = p ? p.patient_name : 'Edit Patient';
+        subtitle.textContent = `Patient ID #${currentPatientId}`;
+      }
+
+      document.getElementById('add-family-form').classList.remove('visible');
+      document.getElementById('form-status').textContent = '';
+    }
+
+    function cancelForm() {
+      document.getElementById('welcome-screen').style.display = 'flex';
+      document.getElementById('patient-form-container').style.display = 'none';
+      currentPatientId = null;
+      isNewPatient = false;
+      document.querySelectorAll('.patient-card').forEach(c => c.classList.remove('selected'));
+    }
+
+    // ============================================================
+    // SAVE PATIENT
+    // ============================================================
+    async function savePatient() {
+      const name = document.getElementById('f-patient-name').value.trim();
+      const phone = document.getElementById('f-caregiver-phone').value.trim();
+
+      if (!name) { showToast('Patient name is required', 'error'); return; }
+      if (!phone) { showToast('Caregiver phone number is required', 'error'); return; }
+
+      const payload = {
+        patient_name: name,
+        age: parseInt(document.getElementById('f-age').value) || null,
+        gender: document.getElementById('f-gender').value,
+        blood_type: document.getElementById('f-blood-type').value,
+        room_number: document.getElementById('f-room-number').value.trim(),
+        address: document.getElementById('f-address').value.trim(),
+        medical_conditions: document.getElementById('f-medical-conditions').value.trim(),
+        notes: document.getElementById('f-notes').value.trim(),
+        device_id: document.getElementById('f-device-id').value.trim() || 'ELDERLY_BAND_01',
+        caregiver_name: document.getElementById('f-caregiver-name').value.trim(),
+        caregiver_phone: phone,
+        caregiver_relation: document.getElementById('f-caregiver-relation').value,
+        caregiver_email: document.getElementById('f-caregiver-email').value.trim(),
+        doctor_name: document.getElementById('f-doctor-name').value.trim(),
+        doctor_phone: document.getElementById('f-doctor-phone').value.trim(),
+        emergency_service: document.getElementById('f-emergency-service').value.trim(),
+        emergency_service_phone: document.getElementById('f-emergency-service-phone').value.trim(),
+        sms_alerts_enabled: document.getElementById('f-sms-alerts-enabled').checked
+      };
+
+      const btn = document.getElementById('btn-save-patient');
+      btn.disabled = true;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"/></svg> Saving...`;
+
+      try {
+        let res, data;
+        if (isNewPatient) {
+          res = await fetch('/api/patients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          data = await res.json();
+          if (res.ok) {
+            const newId = data.patient_id;
+            currentPatientId = newId;
+            isNewPatient = false;
+            // Save any pending family members
+            for (const fm of familyMembersLocal) {
+              await fetch(`/api/patients/${newId}/family`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fm)
+              });
+            }
+            showToast(`Patient "${name}" registered successfully!`);
+            await loadPatients();
+            selectPatient(newId);
+          } else {
+            showToast(data.message || 'Registration failed', 'error');
+          }
+        } else {
+          res = await fetch(`/api/patients/${currentPatientId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          data = await res.json();
+          if (res.ok) {
+            showToast(`Patient "${name}" updated successfully!`);
+            await loadPatients();
+            selectPatient(currentPatientId);
+          } else {
+            showToast(data.message || 'Update failed', 'error');
+          }
+        }
+      } catch (e) {
+        showToast('Network error. Please try again.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Patient`;
+      }
+    }
+
+    // ============================================================
+    // DELETE PATIENT
+    // ============================================================
+    async function deletePatient(id) {
+      const p = allPatients.find(x => x.id === id);
+      if (!confirm(`Delete patient "${p?.patient_name}"? This action cannot be undone.`)) return;
+
+      try {
+        const res = await fetch(`/api/patients/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast('Patient deleted');
+          if (currentPatientId === id) { cancelForm(); }
+          await loadPatients();
+        } else {
+          showToast('Delete failed', 'error');
+        }
+      } catch (e) {
+        showToast('Network error', 'error');
+      }
+    }
+
+    // ============================================================
+    // FAMILY MEMBERS
+    // ============================================================
+    function renderFamilyMembers() {
+      const container = document.getElementById('family-member-list');
+      container.innerHTML = '';
+
+      if (!familyMembersLocal.length) {
+        container.innerHTML = `<div style="font-size:0.8125rem; color:var(--text-muted); padding:0.5rem 0;">No family members added yet.</div>`;
+        return;
+      }
+
+      familyMembersLocal.forEach((m, idx) => {
+        const initials = (m.member_name || 'FM').substring(0, 2).toUpperCase();
+        const item = document.createElement('div');
+        item.className = 'family-member-item';
+        item.innerHTML = `
+          <div class="family-avatar">${initials}</div>
+          <div class="family-info">
+            <div class="family-name">${m.member_name}${m.relation ? ` <span style="font-weight:400; color:var(--text-muted);">(${m.relation})</span>` : ''}</div>
+            <div class="family-meta">${m.phone || '—'}${m.email ? ' · ' + m.email : ''}</div>
+          </div>
+          <span class="family-sms-badge ${m.sms_enabled !== false ? 'on' : 'off'}">${m.sms_enabled !== false ? 'SMS ✓' : 'SMS ✗'}</span>
+          <button class="family-delete-btn" onclick="deleteFamilyMember(${m.id || -1}, ${idx})" title="Remove">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>`;
+        container.appendChild(item);
+      });
+    }
+
+    function showAddFamilyForm() {
+      document.getElementById('add-family-form').classList.add('visible');
+      document.getElementById('btn-show-add-family').style.display = 'none';
+      document.getElementById('fm-name').focus();
+    }
+
+    function cancelAddFamily() {
+      document.getElementById('add-family-form').classList.remove('visible');
+      document.getElementById('btn-show-add-family').style.display = 'inline-flex';
+      ['fm-name','fm-relation','fm-phone','fm-email'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('fm-sms-enabled').checked = true;
+    }
+
+    async function saveFamilyMember() {
+      const name = document.getElementById('fm-name').value.trim();
+      const phone = document.getElementById('fm-phone').value.trim();
+      if (!name) { showToast('Member name is required', 'error'); return; }
+      if (!phone) { showToast('Phone number is required', 'error'); return; }
+
+      const fmData = {
+        member_name: name,
+        relation: document.getElementById('fm-relation').value,
+        phone: phone,
+        email: document.getElementById('fm-email').value.trim(),
+        sms_enabled: document.getElementById('fm-sms-enabled').checked
+      };
+
+      if (currentPatientId && !isNewPatient) {
+        // Save immediately via API
+        try {
+          const res = await fetch(`/api/patients/${currentPatientId}/family`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fmData)
+          });
+          const data = await res.json();
+          if (res.ok) {
+            fmData.id = data.member_id;
+            familyMembersLocal.push(fmData);
+            renderFamilyMembers();
+            cancelAddFamily();
+            showToast(`Family member "${name}" added`);
+            // Update stats
+            document.getElementById('stat-contacts').textContent =
+              parseInt(document.getElementById('stat-contacts').textContent || 0) + 1;
+          } else {
+            showToast(data.message || 'Failed to add member', 'error');
+          }
+        } catch (e) {
+          showToast('Network error', 'error');
+        }
+      } else {
+        // Queue for after patient is saved
+        familyMembersLocal.push(fmData);
+        renderFamilyMembers();
+        cancelAddFamily();
+        showToast(`Family member "${name}" queued — will be saved with patient`);
+      }
+    }
+
+    async function deleteFamilyMember(memberId, localIdx) {
+      if (memberId > 0) {
+        try {
+          const res = await fetch(`/api/family/${memberId}`, { method: 'DELETE' });
+          if (res.ok) {
+            familyMembersLocal.splice(localIdx, 1);
+            renderFamilyMembers();
+            showToast('Family member removed');
+          } else {
+            showToast('Failed to remove member', 'error');
+          }
+        } catch (e) {
+          showToast('Network error', 'error');
+        }
+      } else {
+        familyMembersLocal.splice(localIdx, 1);
+        renderFamilyMembers();
+        showToast('Family member removed');
+      }
+    }
+
+    // ============================================================
+    // PHONE FORMATTER
+    // ============================================================
+    function formatPhone(input) {
+      let v = input.value.replace(/[^\d+]/g, '');
+      if (v.length === 10 && !v.startsWith('+')) {
+        input.dataset.formatted = '+91' + v;
+      }
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    loadPatients();
+  </script>
+</body>
+</html>
