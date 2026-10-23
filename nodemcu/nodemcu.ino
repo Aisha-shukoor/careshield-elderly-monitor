@@ -43,25 +43,18 @@ void connectToWiFi() {
   Serial.println();
   Serial.print(F("[WiFi] Connecting to hotspot '"));
   Serial.print(WIFI_SSID);
-  Serial.println(F("'..."));
+  Serial.println(F("' (Ensure 2.4 GHz band is enabled on phone)..."));
 
-  // Disconnect any previous stale association
-  WiFi.disconnect(true);
-  delay(100);
-
-  // Set explicit Station mode and disable sleep to ensure high sensitivity
   WiFi.mode(WIFI_STA);
-  WiFi.setSleepMode(WIFI_NONE_SLEEP);
   WiFi.setAutoReconnect(true);
-
-  // Connect
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   unsigned long startAttempt = millis();
-  while (WiFi.status() != WL_CONNECTED && (millis() - startAttempt < 22000)) {
-    delay(400);
+  while (WiFi.status() != WL_CONNECTED && (millis() - startAttempt < 15000)) {
+    delay(300);
     digitalWrite(LED_PIN, !digitalRead(LED_PIN)); // Blink LED
     Serial.print(F("."));
+    yield();
   }
   Serial.println();
 
@@ -225,6 +218,7 @@ void setup() {
   Serial.println(F("========================================================"));
 
   connectToWiFi();
+  lastWifiCheck = millis();
 
   Serial.println(F("[Ready] Listening for Arduino telemetry on Pin D2..."));
 }
@@ -235,12 +229,13 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-  // Periodic WiFi health check
-  if (now - lastWifiCheck >= WIFI_CHECK_INTERVAL) {
+  // Periodic WiFi health check (every 15s if disconnected)
+  if (now - lastWifiCheck >= 15000) {
     lastWifiCheck = now;
     if (WiFi.status() != WL_CONNECTED) {
-      Serial.println(F("[WiFi] Lost connection, attempting reconnect..."));
+      Serial.println(F("[WiFi] Not connected, attempting reconnect..."));
       connectToWiFi();
+      lastWifiCheck = millis();
     }
   }
 
