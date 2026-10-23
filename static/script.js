@@ -1119,6 +1119,11 @@ async function saveSMSConfig(e) {
 
 async function triggerTestSMS(isDryRun = true) {
   const recipientsVal = document.getElementById("cfg-recipients")?.value;
+  const statusMsg = document.getElementById("sms-cfg-status");
+  if (statusMsg) {
+    statusMsg.innerText = isDryRun ? "⏳ Simulating test SMS..." : "⏳ Sending LIVE cellular SMS via SMS Gate...";
+    statusMsg.style.color = "var(--accent-amber, #f59e0b)";
+  }
   try {
     const resp = await fetch(`${API_BASE}/api/sms/send-test`, {
       method: "POST",
@@ -1128,15 +1133,20 @@ async function triggerTestSMS(isDryRun = true) {
     if (resp.ok) {
       const data = await resp.json();
       fetchSMSLogs();
-      const statusMsg = document.getElementById("sms-cfg-status");
       if (statusMsg) {
-        statusMsg.innerText = `✓ Test Alert Queued (${data.results?.length || 1} contact(s))`;
-        statusMsg.style.color = "var(--accent-cyan)";
-        setTimeout(() => { statusMsg.innerText = ""; }, 4000);
+        const modeLabel = isDryRun ? "Dry-Run Mock" : "LIVE Carrier SMS";
+        statusMsg.innerText = `✓ ${modeLabel} Dispatched (${data.results?.length || 1} contact(s))! Check your phone.`;
+        statusMsg.style.color = isDryRun ? "var(--accent-cyan)" : "var(--accent-green, #10b981)";
+        setTimeout(() => { statusMsg.innerText = ""; }, 5000);
+      }
+    } else {
+      if (statusMsg) {
+        statusMsg.innerText = "✗ Failed to dispatch SMS. Check server log.";
+        statusMsg.style.color = "var(--accent-rose)";
       }
     }
   } catch (err) {
-    alert("Could not send test SMS: " + err);
+    alert("Could not send SMS: " + err);
   }
 }
 

@@ -909,9 +909,10 @@
               <small class="text-muted">Separate multiple international-format phone numbers with commas.</small>
             </div>
 
-            <div class="form-actions">
+            <div class="form-actions" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
               <button type="submit" class="btn-primary" id="btn-save-sms-cfg">Save SMS Settings</button>
-              <button type="button" class="btn-secondary" onclick="triggerTestSMS(true)">Send Test Alert (Dry-Run)</button>
+              <button type="button" class="btn-secondary" onclick="triggerTestSMS(true)">Send Test (Dry-Run)</button>
+              <button type="button" class="btn-urgent" style="background: var(--accent-rose, #f43f5e); color: white; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 600; cursor: pointer;" onclick="triggerTestSMS(false)">📱 Send LIVE Real SMS</button>
               <span id="sms-cfg-status" class="status-msg"></span>
             </div>
           </form>
